@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUTX 的 MyApps 應用總覽</title>
+    <style>
+        /* 參考圖片色票定義的 CSS 變數 */
+        :root {
+            --prussian-dark: #003153;    /* 普魯士墨藍 */
+            --prussian-blue: #031B89;    /* 深邃寶藍 */
+            --bright-blue: #6295FE;      /* 亮捷克藍 */
+            --light-purple: #A9B5FF;     /* 薰衣草淺紫 */
+            --soft-pink: #FAA7B9;        /* 櫻花粉 */
+            
+            /* 網頁意象配置 */
+            --bg-main: #001a2d;          /* 極簡極暗背景 */
+            --card-bg: rgba(255, 255, 255, 0.04); /* 半透明幾何玻璃擬態 */
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-light: #ffffff;
+            --text-muted: #a0aec0;
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 全局基礎樣式 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'PingFang TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 幾何背景裝飾物（呼應圖片下方的漸層圓球） */
+        body::before, body::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.4;
+        }
+
+        body::before {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, var(--prussian-blue), var(--bright-blue));
+            top: -100px;
+            right: -100px;
+        }
+
+        body::after {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, var(--light-purple), var(--soft-pink));
+            bottom: -150px;
+            left: -150px;
+        }
+
+        /* 現代幾何 頁首 */
+        header {
+            text-align: center;
+            padding: 5rem 1.5rem 3rem 1.5rem;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 30%, var(--light-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 裝飾性幾何線條 */
+        header::after {
+            content: "";
+            display: block;
+            width: 40px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--bright-blue), var(--soft-pink));
+            border-radius: 2px;
+            margin: 1.5rem auto 0 auto;
+        }
+
+        /* 響應式主要內容區 */
+        main {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 5rem 1.5rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* Grid 網格佈局 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+        }
+
+        /* 現代幾何卡片本體 */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px; /* 呼應圖片膠囊型大圓角 */
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            backdrop-filter: blur(12px); /* 輕微玻璃效果 */
+            -webkit-backdrop-filter: blur(12px);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        /* 卡片 Hover 視覺互動 */
+        .card:hover {
+            transform: translateY(-10px);
+            background-color: rgba(255, 255, 255, 0.07);
+            border-color: var(--bright-blue);
+            box-shadow: 0 20px 40px rgba(0, 49, 83, 0.5);
+        }
+
+        /* 卡片幾何圖示與標題 */
+        .card-header-box {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        /* 呼應色票形狀的膠囊圖示框 */
+        .card-badge {
+            width: 14px;
+            height: 35px;
+            border-radius: 7px; /* 完美膠囊型圓角 */
+        }
+
+        /* 為不同卡片設定色票上的不同漸層 */
+        .badge-1 { background: linear-gradient(to bottom, var(--prussian-blue), var(--bright-blue)); }
+        .badge-2 { background: linear-gradient(to bottom, var(--bright-blue), var(--light-purple)); }
+        .badge-3 { background: linear-gradient(to bottom, var(--light-purple), var(--soft-pink)); }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-light);
+            letter-spacing: 0.5px;
+        }
+
+        .card-description {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            flex-grow: 1;
+        }
+
+        /* 幾何極簡按鈕樣式 */
+        .card-btn {
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-light);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            transition: var(--transition);
+        }
+
+        /* 按鈕 Hover 互動 */
+        .card-btn:hover {
+            background: linear-gradient(135deg, var(--bright-blue), var(--light-purple));
+            border-color: transparent;
+            color: var(--prussian-dark);
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(98, 149, 254, 0.3);
+        }
+
+        /* 頁尾 */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            letter-spacing: 0.5px;
+        }
+
+        /* 手機版響應式微調 */
+        @media (max-width: 480px) {
+            header { padding: 4rem 1rem 2rem 1rem; }
+            header h1 { font-size: 2rem; }
+            main { padding: 1rem 1rem 3rem 1rem; }
+            .card { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SUTX  的 MyApps 應用總覽</h1>
+        <p>獨立設計與開發 · 輕量化現代網頁應用程式</p>
+    </header>
+
+    <main>
+        <div class="card-grid">
+            
+            <div class="card">
+                <div>
+                    <div class="card-header-box">
+                        <div class="card-badge badge-1"></div>
+                        <h2 class="card-title">實用工具 App</h2>
+                    </div>
+                    <p class="card-description">精準高效的日常數據處理工具。優化繁瑣計算流程，一鍵直達運算結果，全面提升數位效率。</p>
+                </div>
+                <a href="app1_tools/index.html" class="card-btn">開啟頁面</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <div class="card-header-box">
+                        <div class="card-badge badge-2"></div>
+                        <h2 class="card-title">趣味網頁小遊戲</h2>
+                    </div>
+                    <p class="card-description">基於輕量級算法建構的互動式休閒遊戲。具備流暢的視覺反饋與物理動效，帶來純粹的娛樂體驗。</p>
+                </div>
+                <a href="app2_game/index.html" class="card-btn">開始遊玩</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <div class="card-header-box">
+                        <div class="card-badge badge-3"></div>
+                        <h2 class="card-title">專業知識線上測驗</h2>
+                    </div>
+                    <p class="card-description">結構化的動態問答回饋系統。透過即時數據分析評估，清晰呈現個人知識點盲區與核心能力。</p>
+                </div>
+                <a href="app3_quiz/index.html" class="card-btn">開始測驗</a>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 SUTX. Powered by GitHub Pages.</p>
+    </footer>
+
+</body>
+</html>
