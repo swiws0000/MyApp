@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>經典 貪吃蛇</title>
+    <style>
+        :root {
+            --prussian-dark: #001a2d;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --bright-blue: #6295FE;
+            --light-purple: #A9B5FF;
+            --neon-green: #39FF14;
+            --soft-pink: #FAA7B9;
+            --text-light: #ffffff;
+            --text-muted: #a0aec0;
+            
+            /* 食物閃爍色彩集（採用你的幾何色票延伸） */
+            --food-1: #6295FE; /* 亮藍 */
+            --food-2: #A9B5FF; /* 淺紫 */
+            --food-3: #FAA7B9; /* 櫻花粉 */
+            --food-4: #F72585; /* 艷粉 */
+            --food-5: #7209B7; /* 幾何紫 */
+            --food-6: #4895EF; /* 捷克藍 */
+            --food-7: #4361EE; /* 寶藍 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'PingFang TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--prussian-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: linear-gradient(135deg, #031B89, var(--soft-pink));
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(120px);
+            opacity: 0.18;
+            top: 15%;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--card-border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: var(--card-bg);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .back-btn:hover {
+            color: var(--text-light);
+            border-color: var(--neon-green);
+            background: rgba(57, 255, 20, 0.1);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff, var(--neon-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 1.5rem;
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        canvas#snakeCanvas {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            display: block;
+            transition: transform 0.05s ease;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 140px;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.8rem;
+            text-align: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: 0.2rem;
+        }
+
+        .info-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--neon-green);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--neon-green), var(--bright-blue));
+            border: none;
+            color: #001a2d;
+            padding: 0.8rem;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(57, 255, 20, 0.4);
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 26, 45, 0.7);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content { text-align: center; padding: 2rem; }
+        .modal-title { font-size: 1.8rem; font-weight: 600; color: white; margin-bottom: 1.5rem; }
+
+        .controls-hint {
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            .game-container { flex-direction: column; align-items: center; gap: 1rem; }
+            .side-panel { width: 400px; flex-direction: row; gap: 0.5rem; }
+            .info-box { margin-bottom: 0; flex: 1; }
+            .btn { margin-top: 0; height: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-btn">← 返回首頁</a>
+
+    <h1>經典 貪吃蛇</h1>
+
+    <div class="game-container">
+        <div id="game-modal" class="modal-overlay active">
+            <div class="modal-content">
+                <div id="modal-text" class="modal-title">經典 貪吃蛇</div>
+                <button id="modal-btn" class="btn" style="width: 160px;">開始遊戲</button>
+            </div>
+        </div>
+
+        <canvas id="snakeCanvas" width="400" height="400"></canvas>
+
+        <div class="side-panel">
+            <div>
+                <div class="info-box">
+                    <div class="info-label">SCORE</div>
+                    <div id="score" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">HI-SCORE</div>
+                    <div id="hi-score" class="info-value">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">SPEED</div>
+                    <div id="speed-lvl" class="info-value">1.0x</div>
+                </div>
+            </div>
+            <div>
+                <button id="pause-btn" class="btn" style="background: transparent; border: 1px solid var(--card-border); color: white; display: none;">暫停</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-hint">
+        使用鍵盤 <strong style="color: var(--neon-green);">↑ ↓ ← →</strong> 或 <strong style="color: var(--neon-green);">W A S D</strong> 控制方向<br>
+        吃掉<strong style="color: var(--soft-pink);">彩虹核心</strong>來增加長度與分數，每吃 5 顆速度就會加快！<br>
+        <strong>ESC 鍵：暫停遊戲</strong>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const hiScoreElement = document.getElementById('hi-score');
+        const speedLvlElement = document.getElementById('speed-lvl');
+        const pauseButton = document.getElementById('pause-btn');
+        const gameModal = document.getElementById('game-modal');
+        const modalText = document.getElementById('modal-text');
+        const modalButton = document.getElementById('modal-btn');
+
+        const GRID_SIZE = 20; 
+        const TILE_COUNT = canvas.width / GRID_SIZE;
+
+        let snake = [];
+        let food = { x: 0, y: 0 };
+        let dx = GRID_SIZE; 
+        let dy = 0;
+        let nextDx = dx;
+        let nextDy = dy;
+
+        let score = 0;
+        let hiScore = 0;
+        let baseSpeed = 130; 
+        let currentSpeed = baseSpeed;
+        
+        let isGameOver = true;
+        let isPaused = false;
+        let gameTimeout = null;
+        let particles = [];
+
+        // 食物彩虹色彩定義陣列（固定固定）
+        const foodColors = [
+            '#6295FE', // var(--food-1)
+            '#A9B5FF', // var(--food-2)
+            '#FAA7B9', // var(--food-3)
+            '#F72585', // var(--food-4)
+            '#7209B7', // var(--food-5)
+            '#4895EF', // var(--food-6)
+            '#4361EE'  // var(--food-7)
+        ];
+
+        // --- 街機音效引擎 (統一方波風格) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            osc.type = 'square'; 
+
+            if (type === 'move') { // 輕快短促的轉彎回饋
+                osc.frequency.setValueAtTime(180, now);
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.04);
+                osc.start(); osc.stop(now + 0.04);
+            } 
+            else if (type === 'eat') { // 爽快上揚的和弦吃食聲
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(450, now + 0.05);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(); osc.stop(now + 0.15);
+            } 
+            else if (type === 'gameover') { // 沉悶的挫敗降調
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(40, now + 0.4);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(); osc.stop(now + 0.4);
+            }
+        }
+
+        // 畫面震動特效
+        function triggerShake(intensity = 6) {
+            canvas.style.transform = `translateY(${intensity}px) translateX(${intensity / 2}px)`;
+            setTimeout(() => canvas.style.transform = 'translate(0, 0)', 60);
+        }
+
+        // 吃食時的爆裂粒子
+        function createParticles(x, y, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x + GRID_SIZE / 2, y: y + GRID_SIZE / 2,
+                    vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1, color: color, alpha: 1, decay: Math.random() * 0.04 + 0.03
+                });
+            }
+        }
+
+        // 隨機生成食物座標（且不能生在蛇身上）
+        function repositionFood() {
+            while (true) {
+                food.x = Math.floor(Math.random() * TILE_COUNT) * GRID_SIZE;
+                food.y = Math.floor(Math.random() * TILE_COUNT) * GRID_SIZE;
+                let onSnake = snake.some(part => part.x === food.x && part.y === food.y);
+                if (!onSnake) break;
+            }
+        }
+
+        // 遊戲主循環
+        function gameLoop() {
+            if (isGameOver || isPaused) return;
+
+            // 鎖定方向，防止一幀內快速按兩下造成的對折自殺
+            dx = nextDx;
+            dy = nextDy;
+
+            // 計算蛇頭新位置
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+            // 判定撞牆
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+                endGame();
+                return;
+            }
+
+            // 判定咬到自己
+            for (let i = 0; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    endGame();
+                    return;
+                }
+            }
+
+            // 將新頭部塞入陣列
+            snake.unshift(head);
+
+            // 判定是否吃到食物
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                playSound('eat');
+                triggerShake(8);
+                // 特效：獲取食物当前的顏色並觸發粒子
+                const currentFoodColor = getFoodColor();
+                createParticles(food.x, food.y, currentFoodColor, 15);
+                repositionFood();
+                updateSpeed();
+                updateUI();
+            } else {
+                // 沒吃到食物，就把尾巴甩掉，保持長度
+                snake.pop();
+            }
+
+            draw();
+            gameTimeout = setTimeout(gameLoop, currentSpeed);
+        }
+
+        // 根據分數調整速度（每50分/5顆蛋升速一次）
+        function updateSpeed() {
+            let level = Math.floor(score / 50);
+            currentSpeed = Math.max(50, baseSpeed - level * 10);
+            speedLvlElement.innerText = (baseSpeed / currentSpeed).toFixed(1) + 'x';
+        }
+
+        // 計算食物當前的彩虹顏色
+        function getFoodColor() {
+            // 根據時間戳高速變換陣列中的 7 種顏色
+            const index = Math.floor(Date.now() / 80) % foodColors.length;
+            return foodColors[index];
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 繪製科技感背景網格線
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.015)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < TILE_COUNT; i++) {
+                ctx.beginPath(); ctx.moveTo(i * GRID_SIZE, 0); ctx.lineTo(i * GRID_SIZE, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * GRID_SIZE); ctx.lineTo(canvas.width, i * GRID_SIZE); ctx.stroke();
+            }
+
+            // --- 繪製食物（彩虹核心） ---
+            const currentFoodColor = getFoodColor();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = currentFoodColor;
+            ctx.fillStyle = currentFoodColor; // 使用高速閃爍的彩虹色
+            ctx.beginPath();
+            ctx.roundRect(food.x + 2, food.y + 2, GRID_SIZE - 4, GRID_SIZE - 4, 6);
+            ctx.fill();
+
+            // --- 繪製蛇（固定蛇頭 + 雙色身體） ---
+            snake.forEach((part, index) => {
+                if (index === 0) {
+                    // 1. 繪製蛇頭（固定固定 fixed固定 fixedfixedfixedfixed fixedfixed fixedfixed fixedfixed）
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = 'var(--neon-green)';
+                    ctx.fillStyle = 'var(--neon-green)'; // 絕對絕對絕對固定固定 fixedfixedfixedfixed
+                    ctx.beginPath();
+                    ctx.roundRect(part.x + 1, part.y + 1, GRID_SIZE - 2, GRID_SIZE - 2, 5);
+                    ctx.fill();
+                    
+                    // 蛇頭加上高光質感（固定固定）
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.beginPath();
+                    ctx.roundRect(part.x + 4, part.y + 4, GRID_SIZE - 12, GRID_SIZE - 12, 2);
+                    ctx.fill();
+                } else {
+                    // 2. 繪製蛇身（雙色身體區分）
+                    ctx.shadowBlur = 6;
+                    // 捷克藍（偶數）與淺紫（奇數）交替
+                    const bodyColor1 = '#4895EF'; // var(--food-6)
+                    const bodyColor2 = '#A9B5FF'; // var(--food-2)
+                    const isEven = (index % 2 === 0);
+                    const currentBodyColor = isEven ? bodyColor1 : bodyColor2;
+
+                    ctx.shadowColor = currentBodyColor;
+                    // 加上透明度漸層，越靠近尾巴越淡
+                    const alpha = 1 - (index / snake.length) * 0.6;
+                    ctx.fillStyle = hexToRgba(currentBodyColor, alpha);
+                    
+                    ctx.beginPath();
+                    ctx.roundRect(part.x + 2, part.y + 2, GRID_SIZE - 4, GRID_SIZE - 4, 3);
+                    ctx.fill();
+                }
+            });
+
+            // 重設陰影，避免影響粒子
+            ctx.shadowBlur = 0;
+
+            // 更新並繪製粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 工具函式：將十六進制顏色轉換為帶透明度的 RGBA
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function startGame() {
+            audioCtx.resume();
+            snake = [
+                { x: GRID_SIZE * 5, y: GRID_SIZE * 5 },
+                { x: GRID_SIZE * 4, y: GRID_SIZE * 5 },
+                { x: GRID_SIZE * 3, y: GRID_SIZE * 5 }
+            ];
+            nextDx = GRID_SIZE; nextDy = 0;
+            score = 0;
+            currentSpeed = baseSpeed;
+            particles = [];
+            isGameOver = false;
+            isPaused = false;
+            repositionFood();
+            updateSpeed();
+            updateUI();
+            hideModal();
+            pauseButton.style.display = 'inline-block';
+            if (gameTimeout) clearTimeout(gameTimeout);
+            gameLoop();
+        }
+
+        function endGame() {
+            isGameOver = true;
+            playSound('gameover');
+            triggerShake(15);
+            if (score > hiScore) hiScore = score;
+            updateUI();
+            showModal('GAME OVER', '重新開始');
+            pauseButton.style.display = 'none';
+        }
+
+        function togglePause() {
+            if (isGameOver) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                showModal('遊戲暫警', '繼續遊戲');
+                clearTimeout(gameTimeout);
+            } else {
+                hideModal();
+                gameLoop();
+            }
+        }
+
+        function updateUI() {
+            scoreElement.innerText = score;
+            hiScoreElement.innerText = hiScore;
+        }
+
+        function showModal(text, btnText) {
+            modalText.innerText = text;
+            modalButton.innerText = btnText;
+            gameModal.classList.add('active');
+        }
+
+        function hideModal() { gameModal.classList.remove('remove'); gameModal.classList.remove('active'); }
+
+        // --- 鍵盤監聽事件 ---
+        document.addEventListener('keydown', event => {
+            if (event.keyCode === 27) { togglePause(); return; } // ESC
+            if (isGameOver || isPaused) return;
+
+            // 判斷按鍵方向，並確保不能「直接往回倒退」
+            const goingUp = (dy === -GRID_SIZE);
+            const goingDown = (dy === GRID_SIZE);
+            const goingRight = (dx === GRID_SIZE);
+            const goingLeft = (dx === -GRID_SIZE);
+
+            // 支援 方向鍵 與 WASD
+            if ((event.keyCode === 37 || event.keyCode === 65) && !goingRight) { // Left / A
+                nextDx = -GRID_SIZE; nextDy = 0; playSound('move');
+            }
+            else if ((event.keyCode === 38 || event.keyCode === 87) && !goingDown) { // Up / W
+                nextDx = 0; nextDy = -GRID_SIZE; playSound('move');
+            }
+            else if ((event.keyCode === 39 || event.keyCode === 68) && !goingLeft) { // Right / D
+                nextDx = GRID_SIZE; nextDy = 0; playSound('move');
+            }
+            else if ((event.keyCode === 40 || event.keyCode === 83) && !goingUp) { // Down / S
+                nextDx = 0; nextDy = GRID_SIZE; playSound('move');
+            }
+        });
+
+        modalButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', togglePause);
+
+        // 初始靜態渲染
+        snake = [
+            { x: GRID_SIZE * 5, y: GRID_SIZE * 5 },
+            { x: GRID_SIZE * 4, y: GRID_SIZE * 5 },
+            { x: GRID_SIZE * 3, y: GRID_SIZE * 5 }
+        ];
+        food = { x: GRID_SIZE * 12, y: GRID_SIZE * 5 };
+        draw();
+    </script>
+</body>
+</html>
