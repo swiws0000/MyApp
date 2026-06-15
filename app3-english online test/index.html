@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Online Test</title>
+    <style>
+        /* --- 核心變數矩陣 --- */
+        :root {
+            --bg-body: #001a2d;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #a0aec0;
+            --bg-input: rgba(0, 0, 0, 0.3);
+            
+            --bright-blue: #6295FE;
+            --neon-green: #39FF14;
+            --soft-pink: #FAA7B9;
+            --glow-green: rgba(57, 255, 20, 0.2);
+            --glow-pink: rgba(250, 167, 185, 0.2);
+            --glow-blue: rgba(98, 149, 254, 0.3);
+        }
+
+        /* --- 白天模式變數覆蓋 --- */
+        [data-theme="light"] {
+            --bg-body: #f4f7f6;
+            --bg-card: #ffffff;
+            --border-card: #e2e8f0;
+            --text-main: #1a202c;
+            --text-muted: #718096;
+            --bg-input: #edf2f7;
+            
+            --bright-blue: #3182ce;
+            --neon-green: #38a169;
+            --soft-pink: #e53e3e;
+            --glow-green: rgba(56, 161, 105, 0.15);
+            --glow-pink: rgba(229, 62, 62, 0.15);
+            --glow-blue: rgba(49, 130, 206, 0.2);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'PingFang TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            padding: 80px 20px 40px 20px;
+        }
+
+        /* 頂部控制列 (標題、音效、主題、返回) */
+        .top-navbar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 12px; }
+
+        .back-btn {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-card);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            color: var(--text-main);
+            border-color: var(--bright-blue);
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+
+        /* 設計感幾何按鈕 */
+        .icon-toggle-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .icon-toggle-btn:hover {
+            border-color: var(--bright-blue);
+            transform: translateY(-1px);
+        }
+        .icon-toggle-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-muted);
+            transition: fill 0.2s ease;
+        }
+        .icon-toggle-btn:hover svg { fill: var(--bright-blue); }
+
+        h1 {
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        /* 主工作區 Grid 雙欄佈局 */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 24px;
+            width: 100%;
+            max-width: 1080px;
+            align-items: start;
+        }
+
+        /* --- 左側控制面板 --- */
+        .side-dashboard { display: flex; flex-direction: column; gap: 20px; }
+
+        .panel-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 1.2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* 模式切換器專屬 */
+        .mode-switcher {
+            display: flex;
+            background: rgba(0,0,0,0.15);
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-card);
+        }
+        .mode-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .mode-btn.active {
+            background: var(--bright-blue);
+            color: #fff;
+        }
+
+        /* 進度條與計分 */
+        .progress-container {
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+            height: 6px;
+            margin: 8px 0;
+            overflow: hidden;
+            border: 1px solid var(--border-card);
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--bright-blue);
+            transition: width 0.3s ease;
+        }
+        .status-txt { font-size: 0.85rem; font-family: monospace; color: var(--text-main); }
+
+        /* 大動作功能鈕 */
+        .action-btn {
+            width: 100%;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-submit { background: var(--bright-blue); color: #fff; }
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-submit:disabled { background: var(--border-card); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+        .btn-reset { background: transparent; border: 1px solid var(--border-card); color: var(--text-main); }
+        .btn-reset:hover { background: rgba(250,167,185,0.1); border-color: var(--soft-pink); }
+
+        /* 單元切換選單 */
+        .unit-item {
+            background: rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-card);
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+        }
+        .unit-item.active {
+            border-color: var(--bright-blue);
+            background: rgba(98, 149, 254, 0.05);
+            font-weight: bold;
+        }
+
+        /* --- 右側核心測驗艙 --- */
+        .main-test-cabin {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 0.8rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 題型 1: 詞彙單選題卡片群組 */
+        .vocab-list { display: flex; flex-direction: column; gap: 24px; }
+        .vocab-card {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .vocab-q { font-size: 1.05rem; line-height: 1.6; }
+        
+        .vocab-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        @media (max-width: 550px) { .vocab-options { grid-template-columns: 1fr; } }
+
+        .opt-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        .opt-btn:hover:not(:disabled) { border-color: var(--bright-blue); background: rgba(98,149,254,0.05); }
+        .opt-btn.selected { border-color: var(--bright-blue); background: rgba(98,149,254,0.1); font-weight: bold; }
+
+        /* 詞彙單選題對錯狀態 (Study/Submit 後調用) */
+        .opt-btn.correct { border-color: var(--neon-green) !important; background: var(--glow-green) !important; color: var(--neon-green); }
+        .opt-btn.wrong { border-color: var(--soft-pink) !important; background: var(--glow-pink) !important; color: var(--soft-pink); }
+
+        /* 題型 2: 克漏字文本主體 */
+        .cloze-passage { font-size: 1.1rem; line-height: 2; text-align: justify; color: var(--text-main); }
+
+        /* 嵌入式選單樣式 */
+        .inline-select {
+            background: var(--bg-input);
+            border: 1px solid var(--bright-blue);
+            color: var(--bright-blue);
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            margin: 0 4px;
+            transition: all 0.2s ease;
+        }
+        .inline-select.correct { border-color: var(--neon-green) !important; color: var(--neon-green) !important; background: var(--glow-green) !important; }
+        .inline-select.wrong { border-color: var(--soft-pink) !important; color: var(--soft-pink) !important; background: var(--glow-pink) !important; }
+
+        /* 手風琴摺疊結構 */
+        .accordion-section {
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+        .accordion-header {
+            padding: 1rem; font-size: 0.9rem; font-weight: bold; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; user-select: none;
+        }
+        .accordion-content {
+            padding: 0 1rem; max-height: 0; overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;
+            border-top: 0 solid var(--border-card);
+        }
+        .accordion-section.active .accordion-content { padding: 1rem; max-height: 2000px; border-top-width: 1px; }
+        .accordion-section.disabled { opacity: 0.4; cursor: not-allowed; }
+        .accordion-section.disabled .accordion-header { cursor: not-allowed; }
+
+        .explain-card { border-bottom: 1px solid var(--border-card); padding: 10px 0; }
+        .explain-card:last-child { border: none; }
+        .explain-title { font-weight: bold; color: var(--bright-blue); margin-bottom: 4px; }
+
+        @media (max-width: 768px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-navbar">
+        <div class="nav-left">
+            <a href="../index.html" class="back-btn">← 返回首頁</a>
+        </div>
+        <div class="nav-right">
+            <button class="icon-toggle-btn" id="soundToggle" title="切換音效">
+                <svg id="soundOnIcon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+            <button class="icon-toggle-btn" id="themeToggle" title="切換主題">
+                <svg viewBox="0 0 24 24"><path d="M20 15.31L23.31 12 20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <h1>English Online Test</h1>
+
+    <div class="workspace-grid">
+        
+        <div class="side-dashboard">
+            <div class="panel-box">
+                <span class="panel-title">TERMINAL MODE</span>
+                <div class="mode-switcher">
+                    <button class="mode-btn active" id="modeStudy">Study Mode</button>
+                    <button class="mode-btn" id="modeTest">Test Mode</button>
+                </div>
+
+                <span class="panel-title">PROGRESS <span class="status-txt" id="progressPercent">0%</span></span>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="status-txt" id="scoreTxt" style="text-align: right; margin-bottom: 12px;">Score: --</div>
+
+                <button class="action-btn btn-submit" id="btnSubmit" disabled>Submit Test 📊</button>
+                <button class="action-btn btn-reset" id="btnReset">Reset Terminal 🔄</button>
+            </div>
+
+            <div class="panel-box">
+                <span class="panel-title">TEST UNIT METRICS</span>
+                <div class="unit-item active">
+                    <span>試題全集</span>
+                    <span style="font-family: monospace; font-size: 0.8rem;">10 Qs</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-test-cabin">
+            
+            <div>
+                <div class="section-title">
+                    <span style="background: var(--bright-blue); width:4px; height:18px; display:inline-block; border-radius:2px;"></span>
+                    Part 1: Vocabulary Selection // 核心詞彙題
+                </div>
+                <div class="vocab-list" id="vocabContainer" style="margin-top: 1.2rem;">
+                    </div>
+            </div>
+
+            <div>
+                <div class="section-title">
+                    <span style="background: var(--bright-blue); width:4px; height:18px; display:inline-block; border-radius:2px;"></span>
+                    Part 2: Cloze Contextual Paragraph // 綜合克漏字
+                </div>
+                <div style="margin-top: 1.2rem;">
+                    <div class="cloze-passage" id="clozePassage">
+                        </div>
+                </div>
+            </div>
+
+            <div class="accordion-section disabled" id="explainAccordion">
+                <div class="accordion-header">
+                    <span>全文翻譯與核心詳解矩陣 (TRANSLATIONS & METRICS)</span>
+                    <span>▼</span>
+                </div>
+                <div class="accordion-content" id="explainContent">
+                    </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 擴充全方位數據庫 Matrix ---
+        const vocabQuestions = [
+            { q: "The bus driver often complains about chewing gum found under passenger seats because it is ______ and very hard to remove.", opts: ["sticky", "greasy", "clumsy", "mighty"], ans: 0, exp: "sticky (黏性的)。公車司機抱怨座位下口香糖很「黏」很難清。其餘：greasy 油膩的、clumsy 笨拙的。" },
+            { q: "Jesse is a talented model. He can easily adopt an elegant ______ for a camera shoot.", opts: ["clap", "toss", "pose", "snap"], ans: 2, exp: "pose (姿勢)。模特兒能輕鬆擺出優雅的「姿勢」拍照。其餘：clap 鼓掌、snap 猛咬/拍照。" },
+            { q: "In order to draw her family tree, Mary tried to trace her ______ back to their arrival in North America.", opts: ["siblings", "commuters", "ancestors", "instructors"], ans: 2, exp: "ancestors (祖先)。為了畫家族樹，將「祖先」追溯到抵達北美洲時。其餘：siblings 手足。" },
+            { q: "Upon the super typhoon warning, Nancy rushed to the supermarket—only to find the shelves almost ______ and the stock nearly gone.", opts: ["blank", "bare", "hollow", "queer"], ans: 1, exp: "bare (空空如也的)。颱風警報讓超市貨架被掃空「空無一物」。其餘：blank 空白的(多指紙張)。" },
+            { q: "Recent research has found lots of evidence to ______ the drug company’s claims about its “miracle” tablets for curing cancer.", opts: ["provoke", "counter", "expose", "convert"], ans: 1, exp: "counter (反駁/反擊)。研究發現證據來「反駁」藥廠對神奇癌症藥物的吹噓。" }
+        ];
+
+        const clozePassageText = `Water makes up more than half of our body weight. To sustain this amount of fluid in our bodies, plain water is considered our best choice, for it contains no sugar and no calories. Yet, is water always the healthiest drink we can [Q6]? Well, it depends on who and where we are, and what we’re doing. <br><br> Obviously, a physically [Q7] person with an outdoor job under the sun will need to drink more fluid than a desk-bound person who lives and works in an air-conditioned place. When a person sweats, he loses water and salt... To [Q8] things out, the body will get rid of water by producing urine. For this reason, milk can actually be more effective than drinking water. Milk naturally contains salt and lactose, a sugar which the human body needs in small amounts to help stimulate water [Q9]. Coconut water, which contains salt and carbohydrates, is also more functional than water at restoring and maintaining a normal fluid [Q10] after exercise.`;
+
+        const clozeQuestions = [
+            { id: "[Q6]", opts: ["consume", "dissolve", "maintain", "transfer"], ans: 0, exp: "consume (飲用/消耗)。此處代指攝取、飲用液體。其餘：dissolve 溶解。" },
+            { id: "[Q7]", opts: ["passive", "flexible", "active", "cautious"], ans: 2, exp: "active (活躍的/活動量大的)。戶外高熱工作者代表身體「活動量大」的人。其餘：passive 被動的。" },
+            { id: "[Q8]", opts: ["balance", "cancel", "check", "clear"], ans: 0, exp: "balance (平衡)。balance things out 代表平衡體內的水分系統。其餘：cancel 取消。" },
+            { id: "[Q9]", opts: ["absorption", "conviction", "disaster", "horizon"], ans: 0, exp: "absorption (吸收)。牛奶中微量的糖與鹽有助於刺激人體水分的「吸收」。其餘：disaster 災難。" },
+            { id: "[Q10]", opts: ["equilibrium", "attachment", "monument", "flesh"], ans: 0, exp: "equilibrium (平衡/均衡)。維持運動後體內正常的液體「動態平衡」。其餘：flesh 肉體。" }
+        ];
+
+        // --- 全域狀態調度矩陣 ---
+        let currentMode = 'study'; // study | test
+        let isSoundOn = true;
+        let isSubmitted = false;
+        let userAnswers = { vocab: {}, cloze: {} }; // 紀錄使用者選的 index 或字串
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // --- 初始化配置 ---
+        document.addEventListener("DOMContentLoaded", () => {
+            renderVocab();
+            renderCloze();
+            renderExplanations();
+            setupEventHandlers();
+            updateProgress();
+        });
+
+        // --- 音訊模組 ---
+        function playSfx(type) {
+            if (!isSoundOn) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.setValueAtTime(659.25, now + 0.08);
+                gain.gain.setValueAtTime(0.08, now); gain.gain.linearRampToValueAtTime(0, now + 0.2);
+                osc.start(); osc.stop(now + 0.2);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(293.66, now); osc.frequency.setValueAtTime(220, now + 0.08);
+                gain.gain.setValueAtTime(0.06, now); gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                osc.start(); osc.stop(now + 0.25);
+            } else if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.04, now); gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                osc.start(); osc.stop(now + 0.05);
+            }
+        }
+
+        // --- UI 渲染引擎 ---
+        function renderVocab() {
+            const container = document.getElementById("vocabContainer");
+            container.innerHTML = "";
+            vocabQuestions.forEach((qData, qIdx) => {
+                const card = document.createElement("div");
+                card.className = "vocab-card";
+                card.innerHTML = `<div class="vocab-q">${qIdx + 1}. ${qData.q}</div>`;
+                
+                const optsGrid = document.createElement("div");
+                optsGrid.className = "vocab-options";
+                
+                qData.opts.forEach((opt, optIdx) => {
+                    const btn = document.createElement("button");
+                    btn.className = "opt-btn";
+                    btn.innerText = `(${String.fromCharCode(65+optIdx)}) ${opt}`;
+                    btn.onclick = () => selectVocab(qIdx, optIdx);
+                    optsGrid.appendChild(btn);
+                });
+                
+                card.appendChild(optsGrid);
+                container.appendChild(card);
+            });
+        }
+
+        function renderCloze() {
+            let html = clozePassageText;
+            clozeQuestions.forEach((qData, idx) => {
+                let selectHtml = `<select class="inline-select" data-idx="${idx}" id="cloze-${idx}">
+                    <option value="" selected disabled>Select</option>`;
+                qData.opts.forEach(opt => {
+                    selectHtml += `<option value="${opt}">${opt}</option>`;
+                });
+                selectHtml += `</select>`;
+                html = html.replace(qData.id, selectHtml);
+            });
+            document.getElementById("clozePassage").innerHTML = html;
+
+            // 綁定 Change 事件
+            clozeQuestions.forEach((_, idx) => {
+                document.getElementById(`cloze-${idx}`).onchange = (e) => selectCloze(idx, e.target.value);
+            });
+        }
+
+        function renderExplanations() {
+            const container = document.getElementById("explainContent");
+            container.innerHTML = "<h3 style='margin-bottom:10px; color:var(--text-main);'>112學測雙模組核心解譯矩陣</h3>";
+            
+            vocabQuestions.forEach((q, i) => {
+                container.innerHTML += `<div class="explain-card">
+                    <div class="explain-title">第 ${i+1} 題詞彙解析</div>
+                    <p>${q.exp}</p>
+                </div>`;
+            });
+            clozeQuestions.forEach((q, i) => {
+                container.innerHTML += `<div class="explain-card">
+                    <div class="explain-title">克漏字 [Q${i+6}] 解析</div>
+                    <p>${q.exp}</p>
+                </div>`;
+            });
+        }
+
+        // --- 互動邏輯單元 ---
+        function selectVocab(qIdx, optIdx) {
+            if (isSubmitted && currentMode === 'test') return;
+            playSfx('click');
+            
+            userAnswers.vocab[qIdx] = optIdx;
+            
+            // 更新按鈕選取高亮
+            const cards = document.querySelectorAll(".vocab-card");
+            const btns = cards[qIdx].querySelectorAll(".opt-btn");
+            btns.forEach((btn, i) => {
+                btn.classList.remove("selected");
+                if (i === optIdx) btn.classList.add("selected");
+            });
+
+            if (currentMode === 'study') {
+                // Study 模式點擊即判定
+                const correctAns = vocabQuestions[qIdx].ans;
+                btns.forEach((btn, i) => {
+                    btn.classList.remove("correct", "wrong");
+                    if (i === correctAns) btn.classList.add("correct");
+                    else if (i === optIdx) btn.classList.add("wrong");
+                });
+                if (optIdx === correctAns) playSfx('correct'); else playSfx('wrong');
+            }
+            updateProgress();
+        }
+
+        function selectCloze(idx, value) {
+            if (isSubmitted && currentMode === 'test') return;
+            userAnswers.cloze[idx] = value;
+            
+            const selectEl = document.getElementById(`cloze-${idx}`);
+
+            if (currentMode === 'study') {
+                const correctAns = clozeQuestions[idx].opts[clozeQuestions[idx].ans];
+                selectEl.classList.remove("correct", "wrong");
+                if (value === correctAns) {
+                    selectEl.classList.add("correct");
+                    playSfx('correct');
+                } else {
+                    selectEl.classList.add("wrong");
+                    playSfx('wrong');
+                }
+            } else {
+                playSfx('click');
+            }
+            updateProgress();
+        }
+
+        // --- 計算進度條與啟用 Submit 按鈕 ---
+        function updateProgress() {
+            const totalQs = vocabQuestions.length + clozeQuestions.length;
+            const answeredCount = Object.keys(userAnswers.vocab).length + Object.keys(userAnswers.cloze).length;
+            const pct = Math.round((answeredCount / totalQs) * 100);
+            
+            document.getElementById("progressBar").style.width = `${pct}%`;
+            document.getElementById("progressPercent").innerText = `${pct}%`;
+
+            if (currentMode === 'test') {
+                // Test 模式下，全部寫完才能送出
+                document.getElementById("btnSubmit").disabled = (answeredCount < totalQs || isSubmitted);
+            } else {
+                document.getElementById("btnSubmit").disabled = true;
+                // Study 模式隨時開啟詳解
+                document.getElementById("explainAccordion").classList.remove("disabled");
+            }
+        }
+
+        // --- 提交測驗與評分核心邏輯 (Test Mode 專用) ---
+        function submitTestMatrix() {
+            isSubmitted = true;
+            document.getElementById("btnSubmit").disabled = true;
+            let totalCorrect = 0;
+            const totalQs = vocabQuestions.length + clozeQuestions.length;
+
+            // 1. 判定詞彙題
+            const vocabCards = document.querySelectorAll(".vocab-card");
+            vocabQuestions.forEach((qData, qIdx) => {
+                const btns = vocabCards[qIdx].querySelectorAll(".opt-btn");
+                const userAns = userAnswers.vocab[qIdx];
+                if (userAns === qData.ans) totalCorrect++;
+                
+                btns.forEach((btn, i) => {
+                    if (i === qData.ans) btn.classList.add("correct");
+                    else if (i === userAns) btn.classList.add("wrong");
+                });
+            });
+
+            // 2. 判定克漏字
+            clozeQuestions.forEach((qData, idx) => {
+                const selectEl = document.getElementById(`cloze-${idx}`);
+                const userAns = userAnswers.cloze[idx];
+                const correctText = qData.opts[qData.ans];
+                
+                if (userAns === correctText) {
+                    totalCorrect++;
+                    selectEl.classList.add("correct");
+                } else {
+                    selectEl.classList.add("wrong");
+                }
+                // 把正確答案直接加在下拉選單標題旁方便核對
+                selectEl.title = `Correct: ${correctText}`;
+            });
+
+            // 3. 結算計分、解鎖詳解
+            document.getElementById("scoreTxt").innerText = `Score: ${totalCorrect} / ${totalQs}`;
+            document.getElementById("explainAccordion").classList.remove("disabled");
+            document.getElementById("explainAccordion").classList.add("active");
+            
+            if (totalCorrect === totalQs) playSfx('correct'); else playSfx('wrong');
+        }
+
+        // --- 事件綁定矩陣 ---
+        function setupEventHandlers() {
+            // Study Mode 切換
+            document.getElementById("modeStudy").onclick = () => {
+                if (currentMode === 'study') return;
+                currentMode = 'study';
+                document.getElementById("modeStudy").classList.add("active");
+                document.getElementById("modeTest").classList.remove("active");
+                resetTerminal();
+            };
+
+            // Test Mode 切換
+            document.getElementById("modeTest").onclick = () => {
+                if (currentMode === 'test') return;
+                currentMode = 'test';
+                document.getElementById("modeTest").classList.add("active");
+                document.getElementById("modeStudy").classList.remove("active");
+                resetTerminal();
+            };
+
+            // 提交按鈕
+            document.getElementById("btnSubmit").onclick = () => submitTestMatrix();
+
+            // 重置按鈕
+            document.getElementById("btnReset").onclick = () => resetTerminal();
+
+            // 手風琴摺疊切換
+            document.getElementById("explainAccordion").onclick = (e) => {
+                const acc = document.getElementById("explainAccordion");
+                if (acc.classList.contains("disabled")) return;
+                // 只有點擊 header 區才觸發
+                if (e.target.closest('.accordion-header')) {
+                    acc.classList.toggle("active");
+                    playSfx('click');
+                }
+            };
+
+            // 音效切換
+            document.getElementById("soundToggle").onclick = () => {
+                isSoundOn = !isSoundOn;
+                document.getElementById("soundOnIcon").style.fill = isSoundOn ? "var(--bright-blue)" : "var(--text-muted)";
+            };
+
+            // 黑白主題切換
+            document.getElementById("themeToggle").onclick = () => {
+                const currentTheme = document.documentElement.getAttribute("data-theme");
+                const newTheme = (currentTheme === "light") ? "dark" : "light";
+                document.documentElement.setAttribute("data-theme", newTheme);
+                playSfx('click');
+            };
+        }
+
+        // --- 重置終端機邏輯 ---
+        function resetTerminal() {
+            userAnswers = { vocab: {}, cloze: {} };
+            isSubmitted = false;
+            document.getElementById("scoreTxt").innerText = currentMode === 'study' ? "Score: --" : "Score: --";
+            document.getElementById("explainAccordion").classList.remove("active");
+            if (currentMode === 'test') document.getElementById("explainAccordion").classList.add("disabled");
+            
+            renderVocab();
+            renderCloze();
+            updateProgress();
+            playSfx('click');
+        }
+    </script>
+</body>
+</html>
