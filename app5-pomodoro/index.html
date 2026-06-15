@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>霓虹番茄鐘</title>
+    <style>
+        :root {
+            --prussian-dark: #001a2d;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --bright-blue: #6295FE;
+            --light-purple: #A9B5FF;
+            --neon-green: #39FF14;
+            --soft-pink: #FAA7B9;
+            --text-light: #ffffff;
+            --text-muted: #a0aec0;
+            --theme-color: #39FF14; 
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'PingFang TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--prussian-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #031B89, var(--theme-color));
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(140px);
+            opacity: 0.12;
+            top: 15%;
+            transition: background 0.5s ease;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid var(--card-border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: var(--card-bg);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .back-btn:hover {
+            color: var(--text-light);
+            border-color: var(--theme-color);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff, var(--theme-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: all 0.5s ease;
+        }
+
+        .pomodoro-container {
+            width: 100%;
+            max-width: 460px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 2rem;
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .mode-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px;
+            border-radius: 12px;
+            width: 100%;
+            border: 1px solid var(--card-border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            color: #001a2d;
+            font-weight: bold;
+        }
+        .tab-btn[data-mode="focus"].active { background: var(--neon-green); }
+        .tab-btn[data-mode="short"].active { background: var(--soft-pink); }
+        .tab-btn[data-mode="long"].active { background: var(--bright-blue); }
+
+        .timer-canvas-wrapper {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            margin: 0.2rem 0;
+        }
+
+        canvas#timerCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            display: block;
+        }
+
+        .time-display {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Consolas', monospace;
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: -1px;
+            color: var(--text-light);
+            text-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        .control-panel {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            border: none;
+            padding: 0.9rem;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .btn-start {
+            background: var(--theme-color);
+            color: #001a2d;
+        }
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255,255,255,0.2);
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            color: var(--text-light);
+        }
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--soft-pink);
+        }
+
+        /* 矩陣環境音調音台 */
+        .mixer-title {
+            align-self: flex-start;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            margin-bottom: -0.6rem;
+        }
+
+        .mixer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            width: 100%;
+        }
+
+        .noise-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 0.9rem;
+            color: var(--text-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .noise-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .noise-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .noise-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: var(--text-muted);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.2s ease;
+        }
+
+        .btn-text-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .btn-title { font-size: 0.85rem; font-weight: bold; transition: color 0.2s ease;}
+        .btn-desc { font-size: 0.7rem; color: var(--text-muted); }
+
+        /* 各種噪音啟動時的發光矩陣設定 */
+        .noise-btn.active[data-sound="space"] { border-color: var(--bright-blue); box-shadow: 0 0 15px rgba(98, 149, 254, 0.25); background: rgba(98, 149, 254, 0.05); }
+        .noise-btn.active[data-sound="space"] svg { stroke: var(--bright-blue); filter: drop-shadow(0 0 4px var(--bright-blue)); }
+
+        .noise-btn.active[data-sound="rain"] { border-color: var(--neon-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.25); background: rgba(57, 255, 20, 0.05); }
+        .noise-btn.active[data-sound="rain"] svg { stroke: var(--neon-green); filter: drop-shadow(0 0 4px var(--neon-green)); }
+
+        .noise-btn.active[data-sound="fire"] { border-color: var(--soft-pink); box-shadow: 0 0 15px rgba(250, 167, 185, 0.25); background: rgba(250, 167, 185, 0.05); }
+        .noise-btn.active[data-sound="fire"] svg { stroke: var(--soft-pink); filter: drop-shadow(0 0 4px var(--soft-pink)); }
+
+        .noise-btn.active[data-sound="pulse"] { border-color: var(--light-purple); box-shadow: 0 0 15px rgba(169, 181, 255, 0.25); background: rgba(169, 181, 255, 0.05); }
+        .noise-btn.active[data-sound="pulse"] svg { stroke: var(--light-purple); filter: drop-shadow(0 0 4px var(--light-purple)); }
+
+        .noise-btn.active .btn-title { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="back-btn">← 返回首頁</a>
+
+    <h1 id="mainTitle">Cyber Focus</h1>
+
+    <div class="pomodoro-container">
+        <div class="mode-tabs">
+            <button class="tab-btn active" data-mode="focus">專注任務</button>
+            <button class="tab-btn" data-mode="short">短暫休息</button>
+            <button class="tab-btn" data-mode="long">深層放鬆</button>
+        </div>
+
+        <div class="timer-canvas-wrapper">
+            <canvas id="timerCanvas" width="240" height="240"></canvas>
+            <div class="time-display" id="timeDisplay">25:00</div>
+        </div>
+
+        <div class="control-panel">
+            <button class="btn btn-start" id="btnStart">開始專注</button>
+            <button class="btn btn-reset" id="btnReset">重置</button>
+        </div>
+
+        <span class="mixer-title">MATRIX SOUND MIXER (可複選疊加)</span>
+        <div class="mixer-grid">
+            
+            <button class="noise-btn" data-sound="space">
+                <div class="noise-icon-wrapper">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="6"/>
+                        <path d="M2 12h3M19 12h3M12 2v3M12 19v3M5.75 5.75l2.12 2.12M16.13 16.13l2.12 2.12"/>
+                    </svg>
+                </div>
+                <div class="btn-text-group">
+                    <span class="btn-title">深空艙低頻</span>
+                    <span class="btn-desc">加強重低音嗡嗡聲</span>
+                </div>
+            </button>
+
+            <button class="noise-btn" data-sound="rain">
+                <div class="noise-icon-wrapper">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="8" y1="5" x2="8" y2="19" />
+                        <line x1="12" y1="9" x2="12" y2="21" />
+                        <line x1="16" y1="3" x2="16" y2="15" />
+                    </svg>
+                </div>
+                <div class="btn-text-group">
+                    <span class="btn-title">數位矩陣雨</span>
+                    <span class="btn-desc">高頻雨聲心流白噪音</span>
+                </div>
+            </button>
+
+            <button class="noise-btn" data-sound="fire">
+                <div class="noise-icon-wrapper">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L8 8l4 4-4 4 8 6M8 22l8-6"/>
+                        <path d="M12 7l3 3-3 3"/>
+                    </svg>
+                </div>
+                <div class="btn-text-group">
+                    <span class="btn-title">賽博營火</span>
+                    <span class="btn-desc">模擬木炭酥脆劈啪聲</span>
+                </div>
+            </button>
+
+            <button class="noise-btn" data-sound="pulse">
+                <div class="noise-icon-wrapper">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="2"/>
+                        <path d="M12 6a6 6 0 0 1 6 6M6 12a6 6 0 0 1 6-6"/>
+                        <path d="M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2"/>
+                    </svg>
+                </div>
+                <div class="btn-text-group">
+                    <span class="btn-title">復古 Lofi 脈衝</span>
+                    <span class="btn-desc">加強雙耳節拍α波</span>
+                </div>
+            </button>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('timerCanvas');
+        const ctx = canvas.getContext('2d');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const btnStart = document.getElementById('btnStart');
+        const btnReset = document.getElementById('btnReset');
+        const mainTitle = document.getElementById('mainTitle');
+        const tabs = document.querySelectorAll('.tab-btn');
+        const noiseBtns = document.querySelectorAll('.noise-btn');
+
+        const modes = {
+            focus: { time: 25, color: '#39FF14', label: '開始專注', title: 'Cyber Focus' },
+            short: { time: 5, color: '#FAA7B9', label: '開始休息', title: 'Short Break' },
+            long: { time: 15, color: '#6295FE', label: '長效放鬆', title: 'Long Break' }
+        };
+
+        let currentMode = 'focus';
+        let timeLeft = modes[currentMode].time * 60; 
+        let totalDuration = timeLeft;
+        let timerId = null;
+        let isRunning = false;
+
+        // --- 核心音訊引擎（Web Audio API） ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        let activeNodes = { space: null, rain: null, fire: null, pulse: null };
+
+        function playUIFeedback(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.type = 'square';
+
+            if (type === 'click') {
+                osc.frequency.setValueAtTime(320, now);
+                gainNode.gain.setValueAtTime(0.08, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.04);
+                osc.start(); osc.stop(now + 0.04);
+            } else if (type === 'tick') {
+                osc.frequency.setValueAtTime(580, now);
+                gainNode.gain.setValueAtTime(0.06, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.03);
+                osc.start(); osc.stop(now + 0.03);
+            } else if (type === 'complete') {
+                osc.frequency.setValueAtTime(261.6, now);
+                osc.frequency.setValueAtTime(329.6, now + 0.08);
+                osc.frequency.setValueAtTime(392.0, now + 0.16);
+                osc.frequency.setValueAtTime(523.3, now + 0.24);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(); osc.stop(now + 0.4);
+            }
+        }
+
+        function createNoiseBuffer(type) {
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            let lastOut = 0.0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                if (type === 'space') {
+                    data[i] = white;
+                } else if (type === 'rain') {
+                    lastOut = 0.99886 * lastOut + white * 0.0555179;
+                    data[i] = lastOut * 3.5;
+                } else {
+                    data[i] = white;
+                }
+            }
+            return buffer;
+        }
+
+        function startSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const source = audioCtx.createBufferSource();
+            const gainNode = audioCtx.createGain();
+            
+            if (type === 'space') {
+                source.buffer = createNoiseBuffer('space');
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(100, audioCtx.currentTime); // 稍微壓低截止頻率讓低音更厚
+                gainNode.gain.setValueAtTime(1.2, audioCtx.currentTime);     // 重低音大幅增強 (原 0.4 -> 1.2)
+                source.connect(filter); filter.connect(gainNode);
+            } 
+            else if (type === 'rain') {
+                source.buffer = createNoiseBuffer('rain');
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                source.connect(filter); filter.connect(gainNode);
+            } 
+            else if (type === 'fire') {
+                source.buffer = createNoiseBuffer('rain');
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass'; filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                source.connect(filter); filter.connect(gainNode);
+
+                const scriptNode = audioCtx.createScriptProcessor(4096, 0, 1);
+                scriptNode.onaudioprocess = function(e) {
+                    const output = e.outputBuffer.getChannelData(0);
+                    for (let i = 0; i < output.length; i++) {
+                        output[i] = (Math.random() > 0.9994) ? (Math.random() * 0.6) : 0;
+                    }
+                };
+                const crackleGain = audioCtx.createGain();
+                crackleGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                scriptNode.connect(crackleGain); crackleGain.connect(audioCtx.destination);
+                source.crackleNode = scriptNode;
+            } 
+            else if (type === 'pulse') {
+                const osc1 = audioCtx.createOscillator();
+                const osc2 = audioCtx.createOscillator();
+                osc1.type = 'sine'; osc2.type = 'sine';
+                osc1.frequency.setValueAtTime(90, audioCtx.currentTime);  // 稍微降低底音頻率增強重量感
+                osc2.frequency.setValueAtTime(99, audioCtx.currentTime);  
+                gainNode.gain.setValueAtTime(0.45, audioCtx.currentTime);   // 脈衝大幅增強 (原 0.12 -> 0.45)
+                osc1.connect(gainNode); osc2.connect(gainNode);
+                osc1.start(); osc2.start();
+                activeNodes.pulse = { stop: () => { osc1.stop(); osc2.stop(); }, gain: gainNode };
+                gainNode.connect(audioCtx.destination);
+                return;
+            }
+
+            source.loop = true;
+            gainNode.connect(audioCtx.destination);
+            source.start();
+            activeNodes[type] = { source: source, gain: gainNode };
+        }
+
+        function stopSound(type) {
+            if (!activeNodes[type]) return;
+            if (type === 'pulse') {
+                activeNodes.pulse.stop();
+            } else {
+                try { activeNodes[type].source.stop(); } catch(e){}
+                if (activeNodes[type].source.crackleNode) {
+                    activeNodes[type].source.crackleNode.disconnect();
+                }
+            }
+            activeNodes[type] = null;
+        }
+
+        noiseBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                playUIFeedback('click');
+                const targetBtn = e.currentTarget;
+                const soundType = targetBtn.getAttribute('data-sound');
+
+                if (targetBtn.classList.contains('active')) {
+                    targetBtn.classList.remove('active');
+                    stopSound(soundType);
+                } else {
+                    targetBtn.classList.add('active');
+                    startSound(soundType);
+                }
+            });
+        });
+
+        // --- 進度條渲染引擎 ---
+        function drawTimerCircle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = canvas.width / 2; const cy = canvas.height / 2;
+            const radius = 100;
+            const progress = timeLeft / totalDuration;
+            const endAngle = (-0.5 + 2 * progress) * Math.PI;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, -0.5 * Math.PI, endAngle);
+            ctx.strokeStyle = modes[currentMode].color;
+            ctx.lineWidth = 8; ctx.lineCap = 'round';
+            ctx.shadowBlur = 15; ctx.shadowColor = modes[currentMode].color;
+            ctx.stroke(); ctx.shadowBlur = 0;
+        }
+
+        function updateDisplay() {
+            const mins = Math.floor(timeLeft / 60); const secs = timeLeft % 60;
+            timeDisplay.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            drawTimerCircle();
+        }
+
+        function toggleTimer() {
+            playUIFeedback('click');
+            if (isRunning) {
+                clearInterval(timerId);
+                btnStart.innerText = '繼續專注';
+                isRunning = false;
+            } else {
+                isRunning = true;
+                btnStart.innerText = '暫停專注';
+                timerId = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        if (timeLeft > 0 && timeLeft <= 3) playUIFeedback('tick');
+                        updateDisplay();
+                    } else {
+                        clearInterval(timerId);
+                        playUIFeedback('complete');
+                        isRunning = false;
+                        alert(`${modes[currentMode].title} 階段完成！`);
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            playUIFeedback('click');
+            clearInterval(timerId);
+            isRunning = false;
+            timeLeft = modes[currentMode].time * 60;
+            totalDuration = timeLeft;
+            btnStart.innerText = modes[currentMode].label;
+            updateDisplay();
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                playUIFeedback('click');
+                tabs.forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                currentMode = e.target.getAttribute('data-mode');
+                document.documentElement.style.setProperty('--theme-color', modes[currentMode].color);
+                mainTitle.innerText = modes[currentMode].title;
+                resetTimer();
+            });
+        });
+
+        btnStart.addEventListener('click', toggleTimer);
+        btnReset.addEventListener('click', resetTimer);
+
+        updateDisplay();
+    </script>
+</body>
+</html>
