@@ -531,7 +531,7 @@
             if (isGameOver) return;
             isPaused = !isPaused;
             if (isPaused) {
-                showModal('遊戲暫警', '繼續遊戲');
+                showModal('遊戲暫停', '繼續遊戲');
                 clearTimeout(gameTimeout);
             } else {
                 hideModal();
